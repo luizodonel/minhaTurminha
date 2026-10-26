@@ -1,6 +1,6 @@
 // Client API Service com Fallback Offline Local para Minha Turminha
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 export const BACKEND_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 // Normaliza qualquer URL de foto (/uploads/...) para a URL completa do backend
@@ -140,8 +140,13 @@ export const api = {
       if (res.ok) {
         const data = await res.json();
         return normalizeFoto(data);
+      } else {
+        const errText = await res.text();
+        console.warn(`[API] Upload falhou no backend (HTTP ${res.status}): ${errText}`);
       }
-    } catch (_) {}
+    } catch (err) {
+      console.warn(`[API] Falha de conexão com o backend ao enviar foto: ${err.message}`);
+    }
 
     // Fallback Local (Blob URL para rodar direto no navegador offline)
     return new Promise((resolve) => {

@@ -29,10 +29,10 @@ public class FotoPersonalizada {
     @Column(nullable = false, length = 100)
     private String rotulo;
 
-    @Column(nullable = false, length = 500)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String urlOriginal;
 
-    @Column(nullable = false, length = 500)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String urlThumb;
 
     @Column(length = 50)

@@ -2,20 +2,15 @@ package com.minhaturminha.service;
 
 import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.geometry.Positions;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.*;
-import java.util.UUID;
+import java.util.Base64;
 
 @Service
 public class FileStorageService {
-
-    @Value("${app.upload.dir:uploads}")
-    private String uploadBaseDir;
 
     public static class StoredFilePaths {
         public final String originalUrl;
@@ -28,52 +23,53 @@ public class FileStorageService {
     }
 
     public StoredFilePaths storePhoto(MultipartFile file) throws IOException {
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Arquivo vazio não pode ser armazenado");
         }
 
-        Path photosPath = Paths.get(uploadBaseDir, "photos");
-        Path thumbsPath = Paths.get(uploadBaseDir, "thumbs");
-
-        Files.createDirectories(photosPath);
-        Files.createDirectories(thumbsPath);
-
-        String originalFilename = file.getOriginalFilename();
-        String extension = ".jpg";
-        if (originalFilename != null && originalFilename.lastIndexOf('.') != -1) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf('.')).toLowerCase();
+        byte[] rawBytes = file.getBytes();
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            contentType = "image/jpeg";
         }
 
-        String uniqueName = UUID.randomUUID().toString() + extension;
-        Path targetPhoto = photosPath.resolve(uniqueName);
-        Path targetThumb = thumbsPath.resolve(uniqueName);
+        String rawBase64 = "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(rawBytes);
 
-        // Salva a foto original
-        Files.copy(file.getInputStream(), targetPhoto, StandardCopyOption.REPLACE_EXISTING);
+        String thumbBase64;
+        String originalBase64;
 
-        // Gera a miniatura quadrada (300x300) com corte centralizado perfeito para os cards
         try {
-            Thumbnails.of(targetPhoto.toFile())
+            // Gera thumbnail quadrada 320x320 com corte centralizado perfeito para os cards de memória
+            ByteArrayOutputStream thumbOut = new ByteArrayOutputStream();
+            Thumbnails.of(file.getInputStream())
                     .crop(Positions.CENTER)
                     .size(320, 320)
+                    .outputFormat("jpg")
                     .outputQuality(0.85)
-                    .toFile(targetThumb.toFile());
+                    .toOutputStream(thumbOut);
+            thumbBase64 = "data:image/jpeg;base64," + Base64.getEncoder().encodeToString(thumbOut.toByteArray());
         } catch (Exception e) {
-            // Fallback caso seja formato incompatível com crop: copia o original como thumb
-            Files.copy(targetPhoto, targetThumb, StandardCopyOption.REPLACE_EXISTING);
+            thumbBase64 = rawBase64;
         }
 
-        return new StoredFilePaths("/uploads/photos/" + uniqueName, "/uploads/thumbs/" + uniqueName);
+        try {
+            // Otimiza imagem original mantendo proporção (máx 800x800) para economizar dados
+            ByteArrayOutputStream origOut = new ByteArrayOutputStream();
+            Thumbnails.of(file.getInputStream())
+                    .size(800, 800)
+                    .outputFormat("jpg")
+                    .outputQuality(0.85)
+                    .toOutputStream(origOut);
+            originalBase64 = "data:image/jpeg;base64," + Base64.getEncoder().encodeToString(origOut.toByteArray());
+        } catch (Exception e) {
+            originalBase64 = rawBase64;
+        }
+
+        return new StoredFilePaths(originalBase64, thumbBase64);
     }
 
     public boolean deletePhoto(String url) {
-        if (url == null || !url.startsWith("/uploads/")) return false;
-        try {
-            String relativePath = url.substring("/uploads/".length());
-            Path file = Paths.get(uploadBaseDir).resolve(relativePath);
-            return Files.deleteIfExists(file);
-        } catch (Exception e) {
-            return false;
-        }
+        // Ao salvar direto no PostgreSQL (Base64), a exclusão do registro no banco remove a foto definitivamente
+        return true;
     }
 }
