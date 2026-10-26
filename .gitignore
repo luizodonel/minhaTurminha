@@ -1,0 +1,27 @@
+# Git backups
+**/.git_bak/
+
+# Dependencies
+**/node_modules/
+**/dist/
+**/target/
+
+# Logs
+**/*.log
+
+# Environment & secrets
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Uploads
+minha-turminha-api/uploads/photos/*
+minha-turminha-api/uploads/thumbs/*
+!minha-turminha-api/uploads/photos/.gitkeep
+!minha-turminha-api/uploads/thumbs/.gitkeep
+
+# IDEs & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
