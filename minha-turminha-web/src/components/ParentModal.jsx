@@ -10,7 +10,9 @@ export function ParentModal({
   onSelectChild,
   difficulty,
   onDifficultyChange,
-  onPhotosUpdated
+  onPhotosUpdated,
+  isPro = false,
+  onOpenProModal
 }) {
   const [unlocked, setUnlocked] = useState(false);
   const [mathQuestion, setMathQuestion] = useState({ a: 3, b: 4, ans: 7 });
@@ -604,6 +606,51 @@ export function ParentModal({
             {/* TAB CONFIG / DIFICULDADE */}
             {activeTab === 'config' && (
               <div>
+                {/* Status da Licença PRO */}
+                <div style={{
+                  background: isPro ? '#ecfdf5' : '#fffbeb',
+                  border: isPro ? '2px solid #10b981' : '2px solid #f59e0b',
+                  borderRadius: '1rem',
+                  padding: '0.85rem 1rem',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.75rem',
+                  flexWrap: 'wrap'
+                }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
+                      {isPro ? '👑 Minha Turminha PRO Vitalício Ativo' : '🎁 Plano Atual: Gratuito (4 Jogos)'}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#475569' }}>
+                      {isPro
+                        ? 'Todos os 18 jogos educativos estão liberados neste aparelho!'
+                        : 'Desbloqueie todos os 18 jogos educativos por apenas R$ 9,90 (pagamento único).'}
+                    </div>
+                  </div>
+                  {!isPro && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundService.playPop();
+                        onClose();
+                        if (onOpenProModal) onOpenProModal(null);
+                      }}
+                      className="kid-btn"
+                      style={{
+                        background: '#ea580c',
+                        color: '#fff',
+                        padding: '0.45rem 0.85rem',
+                        fontSize: '0.78rem',
+                        boxShadow: 'none'
+                      }}
+                    >
+                      Liberar PRO (R$ 9,90)
+                    </button>
+                  )}
+                </div>
+
                 <h4 style={{ fontSize: '0.95rem', marginBottom: '0.75rem', color: '#1e293b' }}>
                   Dificuldade do Jogo da Memória
                 </h4>

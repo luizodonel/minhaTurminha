@@ -43,6 +43,14 @@ function getLocalPhotosKey(criancaId) {
   return `turminha_fotos_${getDeviceId()}_${criancaId}`;
 }
 
+function getLocalProKey() {
+  return `turminha_pro_${getDeviceId()}`;
+}
+
+// Os 4 jogos gratuitos liberados para todos os usuários
+export const FREE_GAME_IDS = ['memoria', 'quem-e-quem', 'raspe-descubra', 'bolhas'];
+export const PRO_PRICE_LABEL = 'R$ 9,90';
+
 // Normaliza qualquer URL de foto (/uploads/...) para a URL completa do backend
 export function getFullMediaUrl(url) {
   if (!url) return '';
@@ -326,5 +334,44 @@ export const api = {
         body: JSON.stringify(partida)
       });
     } catch (_) {}
+  },
+
+  // Consulta se este dispositivo possui a licença PRO Vitalícia ativa
+  async getLicencaStatus() {
+    const deviceId = getDeviceId();
+    try {
+      const res = await fetch(`${API_BASE_URL}/licenca?deviceId=${encodeURIComponent(deviceId)}`, {
+        headers: getDeviceHeaders(),
+        signal: AbortSignal.timeout(4000)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data.isPro === 'boolean') {
+          if (data.isPro) {
+            localStorage.setItem(getLocalProKey(), 'true');
+          }
+          return data.isPro;
+        }
+      }
+    } catch (_) {}
+
+    return localStorage.getItem(getLocalProKey()) === 'true';
+  },
+
+  // Ativa o acesso PRO Vitalício (R$ 9,90) para este dispositivo
+  async ativarPro(purchaseToken = 'PLAYSTORE_LIFETIME_990') {
+    const deviceId = getDeviceId();
+    localStorage.setItem(getLocalProKey(), 'true');
+    try {
+      const res = await fetch(`${API_BASE_URL}/licenca/ativar?deviceId=${encodeURIComponent(deviceId)}`, {
+        method: 'POST',
+        headers: getDeviceHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ purchaseToken })
+      });
+      if (res.ok) {
+        return true;
+      }
+    } catch (_) {}
+    return true;
   }
 };

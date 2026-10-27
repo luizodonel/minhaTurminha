@@ -20,6 +20,7 @@ import { BalanceScaleGame } from './components/BalanceScaleGame';
 import { MatrixAssociationGame } from './components/MatrixAssociationGame';
 import { CauseAndEffectGame } from './components/CauseAndEffectGame';
 import { ParentModal } from './components/ParentModal';
+import { ProUpgradeModal } from './components/ProUpgradeModal';
 import { api } from './services/api';
 import { soundService } from './services/soundService';
 
@@ -31,6 +32,9 @@ export default function App() {
   const [welcomeAvatar, setWelcomeAvatar] = useState('🦁');
   const [isCreatingWelcome, setIsCreatingWelcome] = useState(false);
   const [isParentsOpen, setIsParentsOpen] = useState(false);
+  const [isPro, setIsPro] = useState(false);
+  const [isProModalOpen, setIsProModalOpen] = useState(false);
+  const [selectedLockedGame, setSelectedLockedGame] = useState(null);
   const [difficulty, setDifficulty] = useState(6);
   const [isMuted, setIsMuted] = useState(false);
   const [photosVersion, setPhotosVersion] = useState(0);
@@ -42,7 +46,11 @@ export default function App() {
   const initApp = async () => {
     setIsLoadingChild(true);
     try {
-      const criancas = await api.getCriancas();
+      const [criancas, proStatus] = await Promise.all([
+        api.getCriancas(),
+        api.getLicencaStatus()
+      ]);
+      setIsPro(Boolean(proStatus));
       if (criancas && criancas.length > 0) {
         setCurrentChild(criancas[0]);
       } else {
@@ -50,6 +58,18 @@ export default function App() {
       }
     } finally {
       setIsLoadingChild(false);
+    }
+  };
+
+  const handleOpenProModal = (lockedGame = null) => {
+    setSelectedLockedGame(lockedGame);
+    setIsProModalOpen(true);
+  };
+
+  const handleProActivated = (lockedGame) => {
+    setIsPro(true);
+    if (lockedGame?.id) {
+      setActiveGame(lockedGame.id);
     }
   };
 
@@ -94,6 +114,8 @@ export default function App() {
         onSoundToggle={handleSoundToggle}
         onGoHome={() => setActiveGame(null)}
         isMuted={isMuted}
+        isPro={isPro}
+        onOpenProModal={handleOpenProModal}
       />
 
       {/* Conteúdo Principal / Jogos */}
@@ -102,6 +124,8 @@ export default function App() {
           <GameSelector
             onSelectGame={(gameId) => setActiveGame(gameId)}
             currentChild={currentChild}
+            isPro={isPro}
+            onOpenProModal={handleOpenProModal}
           />
         )}
 
@@ -362,7 +386,21 @@ export default function App() {
         onSelectChild={(child) => setCurrentChild(child)}
         difficulty={difficulty}
         onDifficultyChange={(newDiff) => setDifficulty(newDiff)}
-        onPhotosUpdated={() => setPhotosVersion(prev => prev + 1)}
+        onPhotosUpdated={async () => {
+          setPhotosVersion(prev => prev + 1);
+          const proStatus = await api.getLicencaStatus();
+          setIsPro(Boolean(proStatus));
+        }}
+        isPro={isPro}
+        onOpenProModal={handleOpenProModal}
+      />
+
+      {/* Modal de Desbloqueio da Versão PRO Vitalícia (R$ 9,90) */}
+      <ProUpgradeModal
+        isOpen={isProModalOpen}
+        onClose={() => setIsProModalOpen(false)}
+        selectedLockedGame={selectedLockedGame}
+        onProActivated={handleProActivated}
       />
     </div>
   );

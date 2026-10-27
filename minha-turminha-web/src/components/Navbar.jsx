@@ -1,8 +1,8 @@
 import React from 'react';
-import { Volume2, VolumeX, Shield } from 'lucide-react';
+import { Volume2, VolumeX, Shield, Crown } from 'lucide-react';
 import { soundService } from '../services/soundService';
 
-export function Navbar({ currentChild, onOpenParents, onSoundToggle, isMuted, onGoHome }) {
+export function Navbar({ currentChild, onOpenParents, onSoundToggle, isMuted, onGoHome, isPro = false, onOpenProModal }) {
   const handleToggleSound = () => {
     soundService.playPop();
     onSoundToggle();
@@ -44,6 +44,44 @@ export function Navbar({ currentChild, onOpenParents, onSoundToggle, isMuted, on
               {currentChild.nome}
             </span>
           </div>
+        )}
+
+        {/* Botão / Selo Versão PRO */}
+        {isPro ? (
+          <div
+            title="Minha Turminha PRO Vitalício Ativo"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+              border: '2px solid #f59e0b',
+              color: '#b45309',
+              padding: '0.35rem 0.65rem',
+              borderRadius: '9999px',
+              fontSize: '0.78rem',
+              fontWeight: 800
+            }}
+          >
+            <span>👑</span>
+            <span>PRO</span>
+          </div>
+        ) : (
+          <button
+            onClick={() => {
+              soundService.playPop();
+              if (onOpenProModal) onOpenProModal(null);
+            }}
+            className="kid-btn nav-pais-btn"
+            style={{
+              background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)',
+              color: '#fff'
+            }}
+            title="Desbloquear todos os 18 jogos por R$ 9,90 (Vitalício)"
+          >
+            <Crown size={16} />
+            <span className="nav-pais-text">PRO</span>
+          </button>
         )}
 
         {/* Botão de Som */}
