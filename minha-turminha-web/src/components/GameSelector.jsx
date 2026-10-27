@@ -315,11 +315,11 @@ export function GameSelector({ onSelectGame, currentChild, isPro = false, onOpen
       {/* Abas de Categorias */}
       <div style={{
         display: 'flex',
-        gap: '0.6rem',
-        overflowX: 'auto',
-        paddingBottom: '0.75rem',
+        flexWrap: 'wrap',
+        gap: '0.5rem',
         marginBottom: '1.5rem',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        alignItems: 'center'
       }}>
         {categories.map(cat => (
           <button
@@ -332,8 +332,8 @@ export function GameSelector({ onSelectGame, currentChild, isPro = false, onOpen
             style={{
               background: selectedCategory === cat.id ? '#ea580c' : '#fff',
               color: selectedCategory === cat.id ? '#fff' : '#475569',
-              padding: '0.65rem 1.25rem',
-              fontSize: '0.95rem',
+              padding: '0.55rem 1rem',
+              fontSize: '0.88rem',
               border: selectedCategory === cat.id ? '2px solid #c2410c' : '2px solid #e2e8f0',
               boxShadow: selectedCategory === cat.id ? '0 6px 16px rgba(234, 88, 12, 0.35)' : 'var(--card-shadow)',
               flexShrink: 0
