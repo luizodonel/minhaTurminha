@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -21,14 +22,22 @@ public class FotoService {
     private final FileStorageService fileStorageService;
 
     @Transactional(readOnly = true)
-    public List<FotoPersonalizada> listarPorCrianca(Long criancaId) {
-        return fotoRepository.findByCriancaId(criancaId);
+    public List<FotoPersonalizada> listarPorCrianca(Long criancaId, String deviceId) {
+        if (deviceId == null || deviceId.isBlank()) {
+            return Collections.emptyList();
+        }
+        return criancaRepository.findByIdAndDeviceId(criancaId, deviceId.trim())
+                .map(c -> fotoRepository.findByCriancaId(c.getId()))
+                .orElse(Collections.emptyList());
     }
 
     @Transactional
-    public FotoPersonalizada adicionarFoto(Long criancaId, String rotulo, String categoria, MultipartFile arquivo) throws IOException {
-        Crianca crianca = criancaRepository.findById(criancaId)
-                .orElseThrow(() -> new IllegalArgumentException("Criança não encontrada com o ID: " + criancaId));
+    public FotoPersonalizada adicionarFoto(Long criancaId, String deviceId, String rotulo, String categoria, MultipartFile arquivo) throws IOException {
+        if (deviceId == null || deviceId.isBlank()) {
+            throw new IllegalArgumentException("Identificador do dispositivo (X-Device-Id) é obrigatório");
+        }
+        Crianca crianca = criancaRepository.findByIdAndDeviceId(criancaId, deviceId.trim())
+                .orElseThrow(() -> new IllegalArgumentException("Criança não encontrada para este dispositivo"));
 
         FileStorageService.StoredFilePaths paths = fileStorageService.storePhoto(arquivo);
 
@@ -44,11 +53,16 @@ public class FotoService {
     }
 
     @Transactional
-    public void removerFoto(Long fotoId) {
+    public void removerFoto(Long fotoId, String deviceId) {
+        if (deviceId == null || deviceId.isBlank()) {
+            return;
+        }
         fotoRepository.findById(fotoId).ifPresent(foto -> {
-            fileStorageService.deletePhoto(foto.getUrlOriginal());
-            fileStorageService.deletePhoto(foto.getUrlThumb());
-            fotoRepository.delete(foto);
+            if (foto.getCrianca() != null && deviceId.trim().equals(foto.getCrianca().getDeviceId())) {
+                fileStorageService.deletePhoto(foto.getUrlOriginal());
+                fileStorageService.deletePhoto(foto.getUrlThumb());
+                fotoRepository.delete(foto);
+            }
         });
     }
 }

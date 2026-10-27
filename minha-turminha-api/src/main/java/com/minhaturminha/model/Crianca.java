@@ -22,6 +22,9 @@ public class Crianca {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "device_id", length = 100)
+    private String deviceId;
+
     @NotBlank(message = "O nome da criança é obrigatório")
     @Column(nullable = false, length = 100)
     private String nome;

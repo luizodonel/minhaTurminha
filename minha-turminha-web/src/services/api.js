@@ -1,7 +1,47 @@
-// Client API Service com Fallback Offline Local para Minha Turminha
+// Client API Service com Isolamento por Dispositivo (X-Device-Id) e Fallback Offline Local
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 export const BACKEND_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+
+const DEVICE_ID_STORAGE_KEY = 'turminha_device_id';
+
+// Gera ou recupera o identificador único e exclusivo deste aparelho/usuário
+export function getDeviceId() {
+  let deviceId = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
+  if (!deviceId || typeof deviceId !== 'string' || deviceId.trim().length < 8) {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      deviceId = `mt_${crypto.randomUUID()}`;
+    } else {
+      deviceId = `mt_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 12)}`;
+    }
+    localStorage.setItem(DEVICE_ID_STORAGE_KEY, deviceId);
+  }
+  return deviceId.trim();
+}
+
+// Permite restaurar o código de outro aparelho caso a família troque de celular
+export function setDeviceId(newDeviceId) {
+  if (!newDeviceId || typeof newDeviceId !== 'string' || newDeviceId.trim().length < 6) {
+    return false;
+  }
+  localStorage.setItem(DEVICE_ID_STORAGE_KEY, newDeviceId.trim());
+  return true;
+}
+
+function getDeviceHeaders(extraHeaders = {}) {
+  return {
+    'X-Device-Id': getDeviceId(),
+    ...extraHeaders
+  };
+}
+
+function getLocalChildrenKey() {
+  return `turminha_criancas_${getDeviceId()}`;
+}
+
+function getLocalPhotosKey(criancaId) {
+  return `turminha_fotos_${getDeviceId()}_${criancaId}`;
+}
 
 // Normaliza qualquer URL de foto (/uploads/...) para a URL completa do backend
 export function getFullMediaUrl(url) {
@@ -22,70 +62,61 @@ export function normalizeFoto(foto) {
   };
 }
 
-const DEFAULT_DEMO_CHILD = {
-  id: 1,
-  nome: 'Luiz Odonel',
-  idade: 4,
-  avatarUrl: '🦁',
-  totalFotos: 6
-};
-
-
 export const INITIAL_DEMO_PHOTOS = [
-  { id: 101, rotulo: 'Papai', categoria: 'FAMILIA', urlThumb: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=320&auto=format&fit=crop&q=80' },
-  { id: 102, rotulo: 'Mamãe', categoria: 'FAMILIA', urlThumb: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=320&auto=format&fit=crop&q=80' },
-  { id: 103, rotulo: 'Totó (Pet)', categoria: 'PET', urlThumb: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=320&auto=format&fit=crop&q=80' },
-  { id: 104, rotulo: 'Vovó', categoria: 'FAMILIA', urlThumb: 'https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?w=320&auto=format&fit=crop&q=80' },
-  { id: 105, rotulo: 'Vovô', categoria: 'FAMILIA', urlThumb: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=320&auto=format&fit=crop&q=80' },
-  { id: 106, rotulo: 'Bicicleta', categoria: 'BRINQUEDO', urlThumb: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=320&auto=format&fit=crop&q=80' },
-  { id: 107, rotulo: 'Ursinho', categoria: 'BRINQUEDO', urlThumb: 'https://images.unsplash.com/photo-1559454403-b8fb88521f11?w=320&auto=format&fit=crop&q=80' },
-  { id: 108, rotulo: 'Gatinho', categoria: 'PET', urlThumb: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=320&auto=format&fit=crop&q=80' }
+  { id: 101, rotulo: 'Papai', categoria: 'FAMILIA', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=320&auto=format&fit=crop&q=80' },
+  { id: 102, rotulo: 'Mamãe', categoria: 'FAMILIA', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=320&auto=format&fit=crop&q=80' },
+  { id: 103, rotulo: 'Totó (Pet)', categoria: 'PET', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=320&auto=format&fit=crop&q=80' },
+  { id: 104, rotulo: 'Vovó', categoria: 'FAMILIA', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?w=320&auto=format&fit=crop&q=80' },
+  { id: 105, rotulo: 'Vovô', categoria: 'FAMILIA', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=320&auto=format&fit=crop&q=80' },
+  { id: 106, rotulo: 'Bicicleta', categoria: 'BRINQUEDO', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=320&auto=format&fit=crop&q=80' },
+  { id: 107, rotulo: 'Ursinho', categoria: 'BRINQUEDO', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1559454403-b8fb88521f11?w=320&auto=format&fit=crop&q=80' },
+  { id: 108, rotulo: 'Gatinho', categoria: 'PET', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=320&auto=format&fit=crop&q=80' }
 ];
 
 export const api = {
-  // Lista todas as crianças
+  // Lista apenas as crianças vinculadas a este dispositivo
   async getCriancas() {
+    const deviceId = getDeviceId();
     try {
-      const res = await fetch(`${API_BASE_URL}/criancas`, { signal: AbortSignal.timeout(3000) });
+      const res = await fetch(`${API_BASE_URL}/criancas?deviceId=${encodeURIComponent(deviceId)}`, {
+        headers: getDeviceHeaders(),
+        signal: AbortSignal.timeout(4000)
+      });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) return data;
+        if (Array.isArray(data)) {
+          localStorage.setItem(getLocalChildrenKey(), JSON.stringify(data));
+          return data;
+        }
       }
     } catch (_) {}
 
-    // Fallback Local
-    const local = localStorage.getItem('turminha_criancas');
+    // Fallback Local isolado por dispositivo
+    const local = localStorage.getItem(getLocalChildrenKey());
     if (local) {
       try {
         const parsed = JSON.parse(local);
-        let updated = false;
-        const clean = parsed.map(c => {
-          if (c.nome === 'Pedro') {
-            c.nome = 'Luiz Odonel';
-            updated = true;
-          }
-          return c;
-        });
-        if (updated) {
-          localStorage.setItem('turminha_criancas', JSON.stringify(clean));
-        }
-        return clean;
+        if (Array.isArray(parsed)) return parsed;
       } catch (_) {}
     }
-    const initial = [DEFAULT_DEMO_CHILD];
-    localStorage.setItem('turminha_criancas', JSON.stringify(initial));
-    return initial;
+    return [];
   },
 
-  // Cria uma nova criança
+  // Cria uma nova criança vinculada a este dispositivo
   async createCrianca(crianca) {
+    const deviceId = getDeviceId();
     try {
-      const res = await fetch(`${API_BASE_URL}/criancas`, {
+      const res = await fetch(`${API_BASE_URL}/criancas?deviceId=${encodeURIComponent(deviceId)}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getDeviceHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(crianca)
       });
-      if (res.ok) return await res.json();
+      if (res.ok) {
+        const created = await res.json();
+        const current = JSON.parse(localStorage.getItem(getLocalChildrenKey()) || '[]');
+        localStorage.setItem(getLocalChildrenKey(), JSON.stringify([...current, created]));
+        return created;
+      }
     } catch (_) {}
 
     // Fallback Local
@@ -93,18 +124,42 @@ export const api = {
     const nova = {
       ...crianca,
       id: Date.now(),
+      deviceId,
       totalFotos: 0,
       avatarUrl: crianca.avatarUrl || '🦁'
     };
     current.push(nova);
-    localStorage.setItem('turminha_criancas', JSON.stringify(current));
+    localStorage.setItem(getLocalChildrenKey(), JSON.stringify(current));
     return nova;
   },
 
-  // Busca fotos da criança
-  async getFotos(criancaId) {
+  // Remove uma criança vinculada a este dispositivo
+  async deleteCrianca(criancaId) {
+    const deviceId = getDeviceId();
     try {
-      const res = await fetch(`${API_BASE_URL}/criancas/${criancaId}/fotos`, { signal: AbortSignal.timeout(3000) });
+      await fetch(`${API_BASE_URL}/criancas/${criancaId}?deviceId=${encodeURIComponent(deviceId)}`, {
+        method: 'DELETE',
+        headers: getDeviceHeaders()
+      });
+    } catch (_) {}
+
+    const current = JSON.parse(localStorage.getItem(getLocalChildrenKey()) || '[]');
+    const filtradas = current.filter(c => c.id !== criancaId);
+    localStorage.setItem(getLocalChildrenKey(), JSON.stringify(filtradas));
+    localStorage.removeItem(getLocalPhotosKey(criancaId));
+  },
+
+  // Busca fotos da criança (apenas se pertencer a este dispositivo)
+  async getFotos(criancaId) {
+    if (!criancaId) {
+      return INITIAL_DEMO_PHOTOS.map(normalizeFoto);
+    }
+    const deviceId = getDeviceId();
+    try {
+      const res = await fetch(`${API_BASE_URL}/criancas/${criancaId}/fotos?deviceId=${encodeURIComponent(deviceId)}`, {
+        headers: getDeviceHeaders(),
+        signal: AbortSignal.timeout(4000)
+      });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -113,28 +168,32 @@ export const api = {
       }
     } catch (_) {}
 
-    // Fallback Local
-    const local = localStorage.getItem(`turminha_fotos_${criancaId}`);
+    // Fallback Local ou Fotos Demo iniciais para esta criança
+    const local = localStorage.getItem(getLocalPhotosKey(criancaId));
     if (local) {
       try {
         const parsed = JSON.parse(local);
-        return parsed.map(normalizeFoto);
+        if (Array.isArray(parsed)) {
+          return parsed.map(normalizeFoto);
+        }
       } catch (_) {}
     }
-    localStorage.setItem(`turminha_fotos_${criancaId}`, JSON.stringify(INITIAL_DEMO_PHOTOS));
+    localStorage.setItem(getLocalPhotosKey(criancaId), JSON.stringify(INITIAL_DEMO_PHOTOS));
     return INITIAL_DEMO_PHOTOS.map(normalizeFoto);
   },
 
-  // Upload de foto
+  // Upload de foto vinculada à criança deste dispositivo
   async uploadFoto(criancaId, rotulo, categoria, file) {
+    const deviceId = getDeviceId();
     try {
       const formData = new FormData();
       formData.append('rotulo', rotulo);
       formData.append('categoria', categoria);
       formData.append('arquivo', file);
 
-      const res = await fetch(`${API_BASE_URL}/criancas/${criancaId}/fotos`, {
+      const res = await fetch(`${API_BASE_URL}/criancas/${criancaId}/fotos?deviceId=${encodeURIComponent(deviceId)}`, {
         method: 'POST',
+        headers: getDeviceHeaders(),
         body: formData
       });
       if (res.ok) {
@@ -148,12 +207,13 @@ export const api = {
       console.warn(`[API] Falha de conexão com o backend ao enviar foto: ${err.message}`);
     }
 
-    // Fallback Local (Blob URL para rodar direto no navegador offline)
+    // Fallback Local (Base64 para rodar direto no navegador offline)
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const base64 = e.target.result;
-        const current = JSON.parse(localStorage.getItem(`turminha_fotos_${criancaId}`) || '[]');
+        const current = JSON.parse(localStorage.getItem(getLocalPhotosKey(criancaId)) || '[]');
+        const semDemo = current.filter(f => !f.isDemo);
         const novaFoto = {
           id: Date.now(),
           rotulo: rotulo || 'Amigo',
@@ -161,42 +221,59 @@ export const api = {
           urlOriginal: base64,
           urlThumb: base64
         };
-        current.unshift(novaFoto);
-        localStorage.setItem(`turminha_fotos_${criancaId}`, JSON.stringify(current));
+        semDemo.unshift(novaFoto);
+        localStorage.setItem(getLocalPhotosKey(criancaId), JSON.stringify(semDemo));
         resolve(normalizeFoto(novaFoto));
       };
       reader.readAsDataURL(file);
     });
   },
 
-  // Deleta foto
+  // Deleta foto vinculada a este dispositivo
   async deleteFoto(criancaId, fotoId) {
+    const deviceId = getDeviceId();
     try {
-      await fetch(`${API_BASE_URL}/fotos/${fotoId}`, { method: 'DELETE' });
+      await fetch(`${API_BASE_URL}/fotos/${fotoId}?deviceId=${encodeURIComponent(deviceId)}`, {
+        method: 'DELETE',
+        headers: getDeviceHeaders()
+      });
     } catch (_) {}
 
-    const current = JSON.parse(localStorage.getItem(`turminha_fotos_${criancaId}`) || '[]');
+    const current = JSON.parse(localStorage.getItem(getLocalPhotosKey(criancaId)) || '[]');
     const filtradas = current.filter(f => f.id !== fotoId);
-    localStorage.setItem(`turminha_fotos_${criancaId}`, JSON.stringify(filtradas));
+    localStorage.setItem(getLocalPhotosKey(criancaId), JSON.stringify(filtradas));
+  },
+
+  // Restaura as fotos de demonstração localmente para a criança
+  restoreDemoPhotos(criancaId) {
+    if (!criancaId) return;
+    localStorage.setItem(getLocalPhotosKey(criancaId), JSON.stringify(INITIAL_DEMO_PHOTOS));
   },
 
   // Configura tabuleiro do Jogo da Memória
   async getJogoMemoriaSetup(criancaId, pares = 6) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/jogos/memoria/setup?criancaId=${criancaId}&pares=${pares}`, {
-        signal: AbortSignal.timeout(3000)
-      });
-      if (res.ok) {
-        const setup = await res.json();
-        if (setup && Array.isArray(setup.cards)) {
-          setup.cards = setup.cards.map(card => ({
-            ...card,
-            urlThumb: getFullMediaUrl(card.urlThumb)
-          }));
+    const deviceId = getDeviceId();
+    if (criancaId) {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/jogos/memoria/setup?criancaId=${criancaId}&pares=${pares}&deviceId=${encodeURIComponent(deviceId)}`,
+          {
+            headers: getDeviceHeaders(),
+            signal: AbortSignal.timeout(4000)
+          }
+        );
+        if (res.ok) {
+          const setup = await res.json();
+          if (setup && Array.isArray(setup.cards)) {
+            setup.cards = setup.cards.map(card => ({
+              ...card,
+              urlThumb: getFullMediaUrl(card.urlThumb)
+            }));
+          }
+          return setup;
         }
-        return setup;
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
 
     // Fallback Local Inteligente
     const fotos = await this.getFotos(criancaId);
@@ -240,10 +317,12 @@ export const api = {
 
   // Registra partida / pontuação
   async salvarPartida(partida) {
+    if (!partida?.criancaId) return;
+    const deviceId = getDeviceId();
     try {
-      await fetch(`${API_BASE_URL}/jogos/partida`, {
+      await fetch(`${API_BASE_URL}/jogos/partida?deviceId=${encodeURIComponent(deviceId)}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getDeviceHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(partida)
       });
     } catch (_) {}

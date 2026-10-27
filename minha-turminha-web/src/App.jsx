@@ -26,6 +26,10 @@ import { soundService } from './services/soundService';
 export default function App() {
   const [activeGame, setActiveGame] = useState(null);
   const [currentChild, setCurrentChild] = useState(null);
+  const [isLoadingChild, setIsLoadingChild] = useState(true);
+  const [welcomeName, setWelcomeName] = useState('');
+  const [welcomeAvatar, setWelcomeAvatar] = useState('🦁');
+  const [isCreatingWelcome, setIsCreatingWelcome] = useState(false);
   const [isParentsOpen, setIsParentsOpen] = useState(false);
   const [difficulty, setDifficulty] = useState(6);
   const [isMuted, setIsMuted] = useState(false);
@@ -36,9 +40,34 @@ export default function App() {
   }, []);
 
   const initApp = async () => {
-    const criancas = await api.getCriancas();
-    if (criancas && criancas.length > 0) {
-      setCurrentChild(criancas[0]);
+    setIsLoadingChild(true);
+    try {
+      const criancas = await api.getCriancas();
+      if (criancas && criancas.length > 0) {
+        setCurrentChild(criancas[0]);
+      } else {
+        setCurrentChild(null);
+      }
+    } finally {
+      setIsLoadingChild(false);
+    }
+  };
+
+  const handleCreateFirstChild = async (e) => {
+    e.preventDefault();
+    if (!welcomeName.trim() || isCreatingWelcome) return;
+    setIsCreatingWelcome(true);
+    soundService.playSuccess();
+    try {
+      const nova = await api.createCrianca({
+        nome: welcomeName.trim(),
+        idade: 4,
+        avatarUrl: welcomeAvatar
+      });
+      setCurrentChild(nova);
+      setWelcomeName('');
+    } finally {
+      setIsCreatingWelcome(false);
     }
   };
 
@@ -239,6 +268,91 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Modal de Boas-Vindas (Primeiro Acesso neste Aparelho) */}
+      {!isLoadingChild && !currentChild && !isParentsOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '420px', textAlign: 'center' }}>
+            <div style={{ fontSize: '3.2rem', marginBottom: '0.5rem' }}>{welcomeAvatar}</div>
+            <h2 style={{ fontSize: '1.6rem', color: '#0f172a', marginBottom: '0.35rem', fontFamily: 'var(--font-display)' }}>
+              Bem-vindo ao <span style={{ color: '#ea580c' }}>Minha Turminha</span>!
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
+              Crie o perfil da criança para personalizar os jogos neste aparelho:
+            </p>
+
+            <form onSubmit={handleCreateFirstChild} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '0.35rem' }}>
+                  Qual é o nome da criança?
+                </label>
+                <input
+                  type="text"
+                  autoFocus
+                  required
+                  placeholder="Ex: Sofia, Miguel, Lucas..."
+                  value={welcomeName}
+                  onChange={(e) => setWelcomeName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '1rem',
+                    border: '2px solid #cbd5e1',
+                    fontSize: '1rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '0.35rem' }}>
+                  Escolha um mascote favorito:
+                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+                  {['🦁', '🐼', '🚀', '🦄', '🦖'].map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => {
+                        soundService.playPop();
+                        setWelcomeAvatar(emoji);
+                      }}
+                      style={{
+                        flex: 1,
+                        fontSize: '1.75rem',
+                        padding: '0.55rem 0',
+                        borderRadius: '1rem',
+                        border: welcomeAvatar === emoji ? '3px solid #ea580c' : '2px solid #e2e8f0',
+                        background: welcomeAvatar === emoji ? '#fff7ed' : '#f8fafc',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isCreatingWelcome}
+                className="kid-btn"
+                style={{
+                  background: '#10b981',
+                  color: '#fff',
+                  padding: '0.85rem 1.5rem',
+                  fontSize: '1.05rem',
+                  width: '100%',
+                  justifyContent: 'center',
+                  marginTop: '0.25rem'
+                }}
+              >
+                {isCreatingWelcome ? 'Criando Perfil...' : 'Começar a Brincar! 🎉'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Gestão dos Pais */}
       <ParentModal

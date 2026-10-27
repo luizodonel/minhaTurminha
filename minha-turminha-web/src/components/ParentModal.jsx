@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Lock, Check, Upload, Trash2, Users, Sliders, Image as ImageIcon } from 'lucide-react';
-import { api, INITIAL_DEMO_PHOTOS } from '../services/api';
+import { X, Lock, Check, Upload, Trash2, Users, Sliders, Image as ImageIcon, Copy, KeyRound } from 'lucide-react';
+import { api, getDeviceId, setDeviceId } from '../services/api';
 import { soundService } from '../services/soundService';
 
 export function ParentModal({
@@ -30,6 +30,10 @@ export function ParentModal({
   const [novoNome, setNovoNome] = useState('');
   const [novaIdade, setNovaIdade] = useState(4);
   const [novoAvatar, setNovoAvatar] = useState('🦁');
+
+  // Backup / Restauração de Dispositivo
+  const [restoreCode, setRestoreCode] = useState('');
+  const [copiedDevice, setCopiedDevice] = useState(false);
 
   // Gera pergunta matemática aleatória ao abrir
   useEffect(() => {
@@ -72,14 +76,23 @@ export function ParentModal({
     const criancasData = await api.getCriancas();
     setCriancas(criancasData);
 
-    const childId = currentChild?.id || (criancasData[0] ? criancasData[0].id : 1);
-    const fotosData = await api.getFotos(childId);
-    setFotos(fotosData);
+    const childId = currentChild?.id || (criancasData[0] ? criancasData[0].id : null);
+    if (childId) {
+      const fotosData = await api.getFotos(childId);
+      setFotos(fotosData);
+    } else {
+      setFotos([]);
+    }
   };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (!currentChild?.id) {
+      alert('Primeiro cadastre ou selecione uma criança na aba "Crianças"!');
+      return;
+    }
 
     if (!novoRotulo.trim()) {
       alert('Por favor, digite o nome de quem está na foto (Ex: Mamãe, Papai, Vovô)');
@@ -90,7 +103,7 @@ export function ParentModal({
     soundService.playPop();
 
     try {
-      const childId = currentChild?.id || 1;
+      const childId = currentChild.id;
       await api.uploadFoto(childId, novoRotulo.trim(), novaCategoria, file);
       setNovoRotulo('');
       await loadData();
@@ -102,17 +115,19 @@ export function ParentModal({
   };
 
   const handleDeletePhoto = async (fotoId) => {
+    if (!currentChild?.id) return;
     soundService.playPop();
-    const childId = currentChild?.id || 1;
+    const childId = currentChild.id;
     await api.deleteFoto(childId, fotoId);
     await loadData();
     if (onPhotosUpdated) onPhotosUpdated();
   };
 
   const handleAddDemoPhotos = async () => {
+    if (!currentChild?.id) return;
     soundService.playPop();
-    const childId = currentChild?.id || 1;
-    localStorage.setItem(`turminha_fotos_${childId}`, JSON.stringify(INITIAL_DEMO_PHOTOS));
+    const childId = currentChild.id;
+    api.restoreDemoPhotos(childId);
     await loadData();
     if (onPhotosUpdated) onPhotosUpdated();
   };
@@ -131,6 +146,37 @@ export function ParentModal({
     setNovoNome('');
     await loadData();
     onSelectChild(created);
+  };
+
+  const handleDeleteChild = async (e, childId) => {
+    e.stopPropagation();
+    if (!window.confirm('Tem certeza que deseja remover este perfil e suas fotos?')) return;
+    soundService.playPop();
+    await api.deleteCrianca(childId);
+    const updated = await api.getCriancas();
+    setCriancas(updated);
+    if (currentChild?.id === childId) {
+      onSelectChild(updated[0] || null);
+    }
+  };
+
+  const handleCopyDeviceId = () => {
+    navigator.clipboard?.writeText(getDeviceId());
+    setCopiedDevice(true);
+    setTimeout(() => setCopiedDevice(false), 2500);
+  };
+
+  const handleRestoreDevice = async (e) => {
+    e.preventDefault();
+    if (!restoreCode.trim()) return;
+    if (setDeviceId(restoreCode.trim())) {
+      soundService.playSuccess();
+      setRestoreCode('');
+      const criancasData = await api.getCriancas();
+      setCriancas(criancasData);
+      onSelectChild(criancasData[0] || null);
+      if (onPhotosUpdated) onPhotosUpdated();
+    }
   };
 
   if (!isOpen) return null;
@@ -499,8 +545,15 @@ export function ParentModal({
                   </button>
                 </form>
 
-                <h4 style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '0.5rem' }}>Selecionar Criança:</h4>
+                <h4 style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '0.5rem' }}>
+                  Meus Perfis neste Aparelho ({criancas.length}):
+                </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {criancas.length === 0 && (
+                    <div style={{ padding: '1rem', textAlign: 'center', color: '#64748b', fontSize: '0.85rem', background: '#f8fafc', borderRadius: '0.85rem' }}>
+                      Nenhuma criança cadastrada neste aparelho ainda. Adicione acima!
+                    </div>
+                  )}
                   {criancas.map(c => (
                     <div
                       key={c.id}
@@ -520,7 +573,28 @@ export function ParentModal({
                         <span style={{ fontSize: '1.4rem' }}>{c.avatarUrl || '🦁'}</span>
                         <span style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95rem' }}>{c.nome}</span>
                       </div>
-                      {currentChild?.id === c.id && <Check size={18} color="#10b981" />}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {currentChild?.id === c.id && <Check size={18} color="#10b981" />}
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteChild(e, c.id)}
+                          style={{
+                            background: '#fee2e2',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '28px',
+                            height: '28px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#ef4444',
+                            cursor: 'pointer'
+                          }}
+                          title="Excluir perfil"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -558,6 +632,83 @@ export function ParentModal({
                       <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{lvl.desc}</div>
                     </div>
                   ))}
+                </div>
+
+                {/* Código de Isolamento / Backup do Aparelho */}
+                <div style={{
+                  background: '#f8fafc',
+                  padding: '1rem',
+                  borderRadius: '1rem',
+                  border: '2px solid #e2e8f0'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
+                    <KeyRound size={16} color="#0f172a" />
+                    <h4 style={{ fontSize: '0.9rem', color: '#0f172a' }}>Código Privado deste Aparelho</h4>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.6rem', lineHeight: 1.4 }}>
+                    Seus dados são privados e exclusivos deste aparelho. Guarde este código caso queira recuperar suas fotos em outro celular:
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                    <input
+                      type="text"
+                      readOnly
+                      value={getDeviceId()}
+                      style={{
+                        flex: 1,
+                        padding: '0.45rem 0.65rem',
+                        borderRadius: '0.6rem',
+                        border: '1px solid #cbd5e1',
+                        background: '#fff',
+                        fontSize: '0.75rem',
+                        color: '#334155',
+                        fontFamily: 'monospace'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCopyDeviceId}
+                      className="kid-btn"
+                      style={{
+                        background: copiedDevice ? '#10b981' : '#334155',
+                        color: '#fff',
+                        padding: '0.45rem 0.75rem',
+                        fontSize: '0.75rem',
+                        boxShadow: 'none'
+                      }}
+                    >
+                      <Copy size={13} />
+                      <span>{copiedDevice ? 'Copiado!' : 'Copiar'}</span>
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleRestoreDevice} style={{ display: 'flex', gap: '0.4rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Colar código de outro aparelho..."
+                      value={restoreCode}
+                      onChange={(e) => setRestoreCode(e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: '0.45rem 0.65rem',
+                        borderRadius: '0.6rem',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '0.75rem'
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      className="kid-btn"
+                      style={{
+                        background: '#ea580c',
+                        color: '#fff',
+                        padding: '0.45rem 0.75rem',
+                        fontSize: '0.75rem',
+                        boxShadow: 'none'
+                      }}
+                    >
+                      Restaurar
+                    </button>
+                  </form>
                 </div>
               </div>
             )}

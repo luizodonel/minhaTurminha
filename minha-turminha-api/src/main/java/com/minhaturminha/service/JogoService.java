@@ -35,12 +35,16 @@ public class JogoService {
     };
 
     @Transactional(readOnly = true)
-    public JogoMemoriaSetupDTO gerarJogoMemoria(Long criancaId, int totalParesSolicitados) {
+    public JogoMemoriaSetupDTO gerarJogoMemoria(Long criancaId, int totalParesSolicitados, String deviceId) {
         int totalPares = Math.max(3, Math.min(totalParesSolicitados, 12)); // Entre 3 e 12 pares
-        Optional<Crianca> criancaOpt = criancaRepository.findById(criancaId);
+        Optional<Crianca> criancaOpt = (deviceId != null && !deviceId.isBlank())
+                ? criancaRepository.findByIdAndDeviceId(criancaId, deviceId.trim())
+                : Optional.empty();
         String nomeCrianca = criancaOpt.map(Crianca::getNome).orElse("Minha Turminha");
 
-        List<FotoPersonalizada> fotos = fotoRepository.findByCriancaId(criancaId);
+        List<FotoPersonalizada> fotos = criancaOpt.isPresent()
+                ? fotoRepository.findByCriancaId(criancaId)
+                : Collections.emptyList();
         List<CardMemoriaDTO> cards = new ArrayList<>();
 
         List<PhotoSource> baseSources = new ArrayList<>();
@@ -91,9 +95,12 @@ public class JogoService {
     }
 
     @Transactional
-    public PartidaJogo registrarPartida(PartidaRequestDTO req) {
-        Crianca crianca = criancaRepository.findById(req.getCriancaId())
-                .orElseThrow(() -> new IllegalArgumentException("Criança não encontrada com o ID: " + req.getCriancaId()));
+    public PartidaJogo registrarPartida(PartidaRequestDTO req, String deviceId) {
+        if (deviceId == null || deviceId.isBlank()) {
+            throw new IllegalArgumentException("Identificador do dispositivo é obrigatório");
+        }
+        Crianca crianca = criancaRepository.findByIdAndDeviceId(req.getCriancaId(), deviceId.trim())
+                .orElseThrow(() -> new IllegalArgumentException("Criança não encontrada para este dispositivo"));
 
         PartidaJogo partida = PartidaJogo.builder()
                 .crianca(crianca)

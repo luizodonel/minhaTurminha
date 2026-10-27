@@ -17,18 +17,40 @@ public class JogoController {
 
     private final JogoService jogoService;
 
+    private String resolveDeviceId(String headerDeviceId, String paramDeviceId) {
+        if (headerDeviceId != null && !headerDeviceId.isBlank()) {
+            return headerDeviceId.trim();
+        }
+        if (paramDeviceId != null && !paramDeviceId.isBlank()) {
+            return paramDeviceId.trim();
+        }
+        return null;
+    }
+
     @GetMapping("/memoria/setup")
     public ResponseEntity<JogoMemoriaSetupDTO> setupMemoria(
             @RequestParam(value = "criancaId", defaultValue = "1") Long criancaId,
-            @RequestParam(value = "pares", defaultValue = "6") int pares
+            @RequestParam(value = "pares", defaultValue = "6") int pares,
+            @RequestHeader(value = "X-Device-Id", required = false) String headerDeviceId,
+            @RequestParam(value = "deviceId", required = false) String paramDeviceId
     ) {
-        JogoMemoriaSetupDTO setup = jogoService.gerarJogoMemoria(criancaId, pares);
+        String deviceId = resolveDeviceId(headerDeviceId, paramDeviceId);
+        JogoMemoriaSetupDTO setup = jogoService.gerarJogoMemoria(criancaId, pares, deviceId);
         return ResponseEntity.ok(setup);
     }
 
     @PostMapping("/partida")
-    public ResponseEntity<PartidaJogo> salvarPartida(@Valid @RequestBody PartidaRequestDTO partidaRequest) {
-        PartidaJogo partida = jogoService.registrarPartida(partidaRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(partida);
+    public ResponseEntity<?> salvarPartida(
+            @Valid @RequestBody PartidaRequestDTO partidaRequest,
+            @RequestHeader(value = "X-Device-Id", required = false) String headerDeviceId,
+            @RequestParam(value = "deviceId", required = false) String paramDeviceId
+    ) {
+        try {
+            String deviceId = resolveDeviceId(headerDeviceId, paramDeviceId);
+            PartidaJogo partida = jogoService.registrarPartida(partidaRequest, deviceId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(partida);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

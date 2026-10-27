@@ -225,7 +225,7 @@ export function GameSelector({ onSelectGame, currentChild }) {
           {currentChild?.avatarUrl || '🦁'}
         </span>
         <h2 style={{ fontSize: '2.2rem', color: '#0f172a', marginBottom: '0.4rem', fontFamily: 'var(--font-display)' }}>
-          Olá, <span style={{ color: '#ea580c' }}>{currentChild?.nome || 'Luiz Odonel'}</span>!
+          Olá, <span style={{ color: '#ea580c' }}>{currentChild?.nome || 'Amiguinho(a)'}</span>!
         </h2>
         <p style={{ fontSize: '1.15rem', color: '#64748b', maxWidth: '520px', margin: '0 auto' }}>
           Qual jogo divertido você quer brincar hoje com a sua turminha?
