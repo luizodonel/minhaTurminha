@@ -25,3 +25,8 @@ minha-turminha-api/uploads/thumbs/*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Android build artifacts
+*.aab
+*.apk
+minha-turminha-web/android/

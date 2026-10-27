@@ -1,6 +1,13 @@
 // Client API Service com Isolamento por Dispositivo (X-Device-Id) e Fallback Offline Local
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const isCapacitorNative =
+  typeof window !== 'undefined' &&
+  (window.location.protocol === 'capacitor:' ||
+    (window.location.hostname === 'localhost' && !window.location.port));
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (isCapacitorNative ? 'https://minhaturminha.luizodonel.cloud/api' : '/api');
 export const BACKEND_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const DEVICE_ID_STORAGE_KEY = 'turminha_device_id';

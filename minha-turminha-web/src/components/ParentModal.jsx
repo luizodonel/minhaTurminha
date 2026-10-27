@@ -757,6 +757,23 @@ export function ParentModal({
                     </button>
                   </form>
                 </div>
+
+                {/* Link para Política de Privacidade (Exigência Google Play) */}
+                <div style={{ marginTop: '0.85rem', textAlign: 'center' }}>
+                  <a
+                    href="https://minhaturminha.luizodonel.cloud/privacidade.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: '0.78rem',
+                      color: '#64748b',
+                      textDecoration: 'underline',
+                      fontWeight: 600
+                    }}
+                  >
+                    📄 Política de Privacidade e Proteção Infantil
+                  </a>
+                </div>
               </div>
             )}
           </div>
