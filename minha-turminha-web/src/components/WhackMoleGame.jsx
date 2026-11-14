@@ -240,7 +240,7 @@ export function WhackMoleGame({ currentChild, onBack }) {
                         alt={foto.rotulo}
                         onError={(e) => {
                           e.currentTarget.onerror = null;
-                          e.currentTarget.src = 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=320&auto=format&fit=crop&q=80';
+                          e.currentTarget.src = '/demo/mamae.jpg';
                         }}
                         style={{ width: '100%', height: '70%', objectFit: 'cover', display: 'block' }}
                       />

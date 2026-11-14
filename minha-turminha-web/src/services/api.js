@@ -65,6 +65,9 @@ export function getFullMediaUrl(url) {
     return url;
   }
   const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  if (cleanPath.startsWith('/demo/')) {
+    return cleanPath;
+  }
   return `${BACKEND_URL}${cleanPath}`;
 }
 
@@ -78,14 +81,14 @@ export function normalizeFoto(foto) {
 }
 
 export const INITIAL_DEMO_PHOTOS = [
-  { id: 101, rotulo: 'Papai', categoria: 'FAMILIA', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=320&auto=format&fit=crop&q=80' },
-  { id: 102, rotulo: 'Mamãe', categoria: 'FAMILIA', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=320&auto=format&fit=crop&q=80' },
-  { id: 103, rotulo: 'Totó (Pet)', categoria: 'PET', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=320&auto=format&fit=crop&q=80' },
-  { id: 104, rotulo: 'Vovó', categoria: 'FAMILIA', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?w=320&auto=format&fit=crop&q=80' },
-  { id: 105, rotulo: 'Vovô', categoria: 'FAMILIA', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=320&auto=format&fit=crop&q=80' },
-  { id: 106, rotulo: 'Bicicleta', categoria: 'BRINQUEDO', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=320&auto=format&fit=crop&q=80' },
-  { id: 107, rotulo: 'Ursinho', categoria: 'BRINQUEDO', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1559454403-b8fb88521f11?w=320&auto=format&fit=crop&q=80' },
-  { id: 108, rotulo: 'Gatinho', categoria: 'PET', isDemo: true, urlThumb: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=320&auto=format&fit=crop&q=80' }
+  { id: 101, rotulo: 'Papai', categoria: 'FAMILIA', isDemo: true, urlThumb: '/demo/papai.jpg' },
+  { id: 102, rotulo: 'Mamãe', categoria: 'FAMILIA', isDemo: true, urlThumb: '/demo/mamae.jpg' },
+  { id: 103, rotulo: 'Totó (Pet)', categoria: 'PET', isDemo: true, urlThumb: '/demo/cachorro.jpg' },
+  { id: 104, rotulo: 'Vovó', categoria: 'FAMILIA', isDemo: true, urlThumb: '/demo/vovo_ela.jpg' },
+  { id: 105, rotulo: 'Vovô', categoria: 'FAMILIA', isDemo: true, urlThumb: '/demo/vovo.jpg' },
+  { id: 106, rotulo: 'Gatinho', categoria: 'PET', isDemo: true, urlThumb: '/demo/gatinho.jpg' },
+  { id: 107, rotulo: 'Ursinho', categoria: 'BRINQUEDO', isDemo: true, urlThumb: '/demo/ursinho.jpg' },
+  { id: 108, rotulo: 'Bebê', categoria: 'FAMILIA', isDemo: true, urlThumb: '/demo/bebe.jpg' }
 ];
 
 export const api = {

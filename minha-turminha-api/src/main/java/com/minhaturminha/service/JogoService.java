@@ -24,14 +24,14 @@ public class JogoService {
     private final PartidaJogoRepository partidaRepository;
 
     private static final String[][] DEMO_PHOTOS = {
-        {"Papai", "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=320&auto=format&fit=crop&q=80"},
-        {"Mam\u00e3e", "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=320&auto=format&fit=crop&q=80"},
-        {"Tot\u00f3 (Pet)", "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=320&auto=format&fit=crop&q=80"},
-        {"Vov\u00f3", "https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?w=320&auto=format&fit=crop&q=80"},
-        {"Vov\u00f4", "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=320&auto=format&fit=crop&q=80"},
-        {"Bicicleta", "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=320&auto=format&fit=crop&q=80"},
-        {"Ursinho", "https://images.unsplash.com/photo-1559454403-b8fb88521f11?w=320&auto=format&fit=crop&q=80"},
-        {"Bola", "https://images.unsplash.com/photo-1511886929837-354d827aae26?w=320&auto=format&fit=crop&q=80"}
+        {"Papai", "/demo/papai.jpg"},
+        {"Mam\u00e3e", "/demo/mamae.jpg"},
+        {"Tot\u00f3 (Pet)", "/demo/cachorro.jpg"},
+        {"Vov\u00f3", "/demo/vovo_ela.jpg"},
+        {"Vov\u00f4", "/demo/vovo.jpg"},
+        {"Gatinho", "/demo/gatinho.jpg"},
+        {"Ursinho", "/demo/ursinho.jpg"},
+        {"Beb\u00ea", "/demo/bebe.jpg"}
     };
 
     @Transactional(readOnly = true)

@@ -93,7 +93,7 @@ const STICKER_CATALOG = [
 
 const FALLBACK_CHILD = {
   rotulo: 'Você',
-  urlThumb: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=320&auto=format&fit=crop&q=80'
+  urlThumb: '/demo/bebe.jpg'
 };
 
 export function FaceDressUpGame({ currentChild, onBack }) {

@@ -14,11 +14,11 @@ function normalizeLetter(str) {
 }
 
 const FALLBACK_WORDS = [
-  { rotulo: 'Papai', urlThumb: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=320&auto=format&fit=crop&q=80' },
-  { rotulo: 'Mamae', urlThumb: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=320&auto=format&fit=crop&q=80' },
-  { rotulo: 'Bebe', urlThumb: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=320&auto=format&fit=crop&q=80' },
-  { rotulo: 'Gato', urlThumb: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=320&auto=format&fit=crop&q=80' },
-  { rotulo: 'Bola', urlThumb: 'https://images.unsplash.com/photo-1511886929837-354d827aae26?w=320&auto=format&fit=crop&q=80' }
+  { rotulo: 'Papai', urlThumb: '/demo/papai.jpg' },
+  { rotulo: 'Mamae', urlThumb: '/demo/mamae.jpg' },
+  { rotulo: 'Bebe', urlThumb: '/demo/bebe.jpg' },
+  { rotulo: 'Gato', urlThumb: '/demo/gatinho.jpg' },
+  { rotulo: 'Ursinho', urlThumb: '/demo/ursinho.jpg' }
 ];
 
 const LETTER_COLORS = [

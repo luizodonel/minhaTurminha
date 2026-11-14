@@ -39,7 +39,7 @@ export function StickerAlbumGame({ currentChild, onBack }) {
 
     // Gera 6 figurinhas com temas unisex
     const generated = STICKER_THEMES.map((theme, idx) => {
-      const photo = list[idx % list.length] || { rotulo: 'Amigo', urlThumb: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=320&auto=format&fit=crop&q=80' };
+      const photo = list[idx % list.length] || { rotulo: 'Amigo', urlThumb: '/demo/mamae.jpg' };
       return {
         id: `sticker-${idx}`,
         slotIdx: idx,

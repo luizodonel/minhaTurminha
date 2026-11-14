@@ -61,10 +61,10 @@ const MAZE_LEVELS = [
 ];
 
 const FALLBACK_PHOTOS = [
-  { rotulo: 'Você', urlThumb: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=320&auto=format&fit=crop&q=80' },
-  { rotulo: 'Mamãe', urlThumb: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=320&auto=format&fit=crop&q=80' },
-  { rotulo: 'Papai', urlThumb: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=320&auto=format&fit=crop&q=80' },
-  { rotulo: 'Pet', urlThumb: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=320&auto=format&fit=crop&q=80' }
+  { rotulo: 'Você', urlThumb: '/demo/bebe.jpg' },
+  { rotulo: 'Mamãe', urlThumb: '/demo/mamae.jpg' },
+  { rotulo: 'Papai', urlThumb: '/demo/papai.jpg' },
+  { rotulo: 'Pet', urlThumb: '/demo/cachorro.jpg' }
 ];
 
 export function MazeGame({ currentChild, onBack }) {

@@ -26,10 +26,10 @@ const GENERIC_OBJECTS = [
 ];
 
 const FALLBACK_FAMILY = [
-  { rotulo: 'Papai', urlThumb: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=320&auto=format&fit=crop&q=80' },
-  { rotulo: 'Mamãe', urlThumb: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=320&auto=format&fit=crop&q=80' },
-  { rotulo: 'Pet Amigo', urlThumb: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=320&auto=format&fit=crop&q=80' },
-  { rotulo: 'Você', urlThumb: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=320&auto=format&fit=crop&q=80' }
+  { rotulo: 'Papai', urlThumb: '/demo/papai.jpg' },
+  { rotulo: 'Mamãe', urlThumb: '/demo/mamae.jpg' },
+  { rotulo: 'Pet Amigo', urlThumb: '/demo/cachorro.jpg' },
+  { rotulo: 'Você', urlThumb: '/demo/bebe.jpg' }
 ];
 
 export function PairMatchingGame({ currentChild, onBack }) {
