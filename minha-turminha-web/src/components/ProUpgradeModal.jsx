@@ -14,6 +14,7 @@ export function ProUpgradeModal({
   const [mathInput, setMathInput] = useState('');
   const [mathError, setMathError] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [billingError, setBillingError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -24,8 +25,36 @@ export function ProUpgradeModal({
       setMathInput('');
       setMathError(false);
       setProcessing(false);
+      setBillingError('');
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    const onPlayBillingResult = async (event) => {
+      const detail = event?.detail || {};
+      if (detail.success) {
+        try {
+          await api.ativarPro(detail.purchaseToken || `PLAYSTORE_990_${Date.now()}`);
+          soundService.playWin();
+          setProcessing(false);
+          if (onProActivated) {
+            onProActivated(selectedLockedGame);
+          }
+          onClose();
+        } catch (e) {
+          setProcessing(false);
+          setBillingError('Compra aprovada! Reinicie o aplicativo se os jogos não abrirem.');
+        }
+      } else {
+        soundService.playBoop();
+        setProcessing(false);
+        setBillingError(detail.error || 'Pagamento não concluído na Google Play Store.');
+      }
+    };
+
+    window.addEventListener('playBillingResult', onPlayBillingResult);
+    return () => window.removeEventListener('playBillingResult', onPlayBillingResult);
+  }, [onProActivated, selectedLockedGame, onClose]);
 
   if (!isOpen) return null;
 
@@ -45,47 +74,62 @@ export function ProUpgradeModal({
   const handlePurchaseLifetime = async () => {
     if (processing) return;
     setProcessing(true);
+    setBillingError('');
     soundService.playPop();
 
-    try {
-      let purchaseToken = `PLAYSTORE_990_${Date.now()}`;
-
-      // Suporte nativo para Google Play Billing (Digital Goods API / TWA Play Store) se disponível no WebView/TWA
-      if (typeof window !== 'undefined' && 'getDigitalGoodsService' in window) {
-        try {
-          const service = await window.getDigitalGoodsService('https://play.google.com/billing');
-          if (service) {
-            const paymentRequest = new PaymentRequest(
-              [{
-                supportedMethods: 'https://play.google.com/billing',
-                data: { sku: 'minha_turminha_pro_vitalicio' }
-              }],
-              {
-                total: {
-                  label: 'Minha Turminha PRO Vitalício',
-                  amount: { currency: 'BRL', value: '9.90' }
-                }
-              }
-            );
-            const paymentResponse = await paymentRequest.show();
-            const { purchaseToken: token } = paymentResponse.details;
-            await paymentResponse.complete('success');
-            if (token) purchaseToken = token;
-          }
-        } catch (billingErr) {
-          console.warn('[PlayBilling] Fallback de ativação direta:', billingErr);
-        }
+    // 1. Ponte Nativa Android Google Play BillingClient (Capacitor WebView)
+    if (typeof window !== 'undefined' && window.AndroidPlayBilling && typeof window.AndroidPlayBilling.startPurchase === 'function') {
+      try {
+        window.AndroidPlayBilling.startPurchase('minha_turminha_pro_vitalicio');
+        return; // O resultado chegará pelo evento 'playBillingResult'
+      } catch (err) {
+        setProcessing(false);
+        setBillingError('Erro ao iniciar cobrança na Google Play Store.');
+        return;
       }
-
-      await api.ativarPro(purchaseToken);
-      soundService.playWin();
-      if (onProActivated) {
-        onProActivated(selectedLockedGame);
-      }
-      onClose();
-    } finally {
-      setProcessing(false);
     }
+
+    // 2. Suporte para TWA / Digital Goods API (Chrome Play Store)
+    if (typeof window !== 'undefined' && 'getDigitalGoodsService' in window) {
+      try {
+        const service = await window.getDigitalGoodsService('https://play.google.com/billing');
+        if (service) {
+          const paymentRequest = new PaymentRequest(
+            [{
+              supportedMethods: 'https://play.google.com/billing',
+              data: { sku: 'minha_turminha_pro_vitalicio' }
+            }],
+            {
+              total: {
+                label: 'Minha Turminha PRO Vitalício',
+                amount: { currency: 'BRL', value: '9.90' }
+              }
+            }
+          );
+          const paymentResponse = await paymentRequest.show();
+          const { purchaseToken: token } = paymentResponse.details;
+          await paymentResponse.complete('success');
+          await api.ativarPro(token || `PLAYSTORE_990_${Date.now()}`);
+          soundService.playWin();
+          setProcessing(false);
+          if (onProActivated) {
+            onProActivated(selectedLockedGame);
+          }
+          onClose();
+          return;
+        }
+      } catch (billingErr) {
+        soundService.playBoop();
+        setProcessing(false);
+        setBillingError('Compra cancelada ou não concluída na Google Play Store.');
+        return;
+      }
+    }
+
+    // 3. Caso esteja rodando no navegador Web fora do aplicativo da Play Store
+    soundService.playBoop();
+    setProcessing(false);
+    setBillingError('Para desbloquear o PRO por R$ 9,90, faça a compra pelo aplicativo oficial instalado pela Google Play Store.');
   };
 
   return (
@@ -279,6 +323,22 @@ export function ProUpgradeModal({
                 </div>
               ))}
             </div>
+
+            {billingError && (
+              <div style={{
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#dc2626',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '0.75rem',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                textAlign: 'center',
+                marginBottom: '0.85rem'
+              }}>
+                {billingError}
+              </div>
+            )}
 
             {/* Botão de Compra */}
             <button
