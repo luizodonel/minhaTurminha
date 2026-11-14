@@ -1,0 +1,9 @@
+{
+  "appId": "com.minhaturminha.app",
+  "appName": "Minha Turminha",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
+
