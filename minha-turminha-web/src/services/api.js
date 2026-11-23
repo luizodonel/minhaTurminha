@@ -58,13 +58,46 @@ function getLocalProKey() {
 export const FREE_GAME_IDS = ['memoria', 'quem-e-quem', 'raspe-descubra', 'bolhas'];
 export const PRO_PRICE_LABEL = 'R$ 9,90';
 
-// Normaliza qualquer URL de foto (/uploads/...) para a URL completa do backend
-export function getFullMediaUrl(url) {
-  if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
-    return url;
+// Mapeamento automático das fotos reais antigas (Unsplash) para os novos personagens cartoon 3D
+const LEGACY_DEMO_MAP = [
+  { match: 'photo-1506794778202', rotulo: 'Papai', url: '/demo/papai.jpg' },
+  { match: 'photo-1544005313', rotulo: 'Mamãe', url: '/demo/mamae.jpg' },
+  { match: 'photo-1543466835', rotulo: 'Totó (Pet)', url: '/demo/cachorro.jpg' },
+  { match: 'photo-1581579438747', rotulo: 'Vovó', url: '/demo/vovo_ela.jpg' },
+  { match: 'photo-1472099645785', rotulo: 'Vovô', url: '/demo/vovo.jpg' },
+  { match: 'photo-1514888286974', rotulo: 'Gatinho', url: '/demo/gatinho.jpg' },
+  { match: 'photo-1559454403', rotulo: 'Ursinho', url: '/demo/ursinho.jpg' },
+  { match: 'photo-1485965120184', rotulo: 'Bebê', url: '/demo/bebe.jpg' },
+  { match: 'photo-1511886929837', rotulo: 'Bebê', url: '/demo/bebe.jpg' }
+];
+
+function migrateLegacyDemoUrl(url, rotulo = '') {
+  if (!url || typeof url !== 'string') return url;
+  if (url.includes('images.unsplash.com')) {
+    const byUrl = LEGACY_DEMO_MAP.find(item => url.includes(item.match));
+    if (byUrl) return byUrl.url;
+
+    const r = (rotulo || '').toLowerCase();
+    if (r.includes('papai')) return '/demo/papai.jpg';
+    if (r.includes('mam')) return '/demo/mamae.jpg';
+    if (r.includes('vovó') || r.includes('vovo_ela')) return '/demo/vovo_ela.jpg';
+    if (r.includes('vovô') || r.includes('vovo')) return '/demo/vovo.jpg';
+    if (r.includes('tot') || r.includes('cachorro') || r.includes('pet')) return '/demo/cachorro.jpg';
+    if (r.includes('gat')) return '/demo/gatinho.jpg';
+    if (r.includes('urs')) return '/demo/ursinho.jpg';
+    return '/demo/bebe.jpg';
   }
-  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return url;
+}
+
+// Normaliza qualquer URL de foto (/uploads/...) para a URL completa do backend
+export function getFullMediaUrl(url, rotulo = '') {
+  if (!url) return '';
+  const migrated = migrateLegacyDemoUrl(url, rotulo);
+  if (migrated.startsWith('http://') || migrated.startsWith('https://') || migrated.startsWith('data:')) {
+    return migrated;
+  }
+  const cleanPath = migrated.startsWith('/') ? migrated : `/${migrated}`;
   if (cleanPath.startsWith('/demo/')) {
     return cleanPath;
   }
@@ -73,10 +106,12 @@ export function getFullMediaUrl(url) {
 
 export function normalizeFoto(foto) {
   if (!foto) return foto;
+  const rawThumb = foto.urlThumb || foto.urlOriginal;
+  const rawOrig = foto.urlOriginal || foto.urlThumb;
   return {
     ...foto,
-    urlThumb: getFullMediaUrl(foto.urlThumb || foto.urlOriginal),
-    urlOriginal: getFullMediaUrl(foto.urlOriginal || foto.urlThumb)
+    urlThumb: getFullMediaUrl(rawThumb, foto.rotulo),
+    urlOriginal: getFullMediaUrl(rawOrig, foto.rotulo)
   };
 }
 
@@ -192,7 +227,14 @@ export const api = {
       try {
         const parsed = JSON.parse(local);
         if (Array.isArray(parsed)) {
-          return parsed.map(normalizeFoto);
+          const hasLegacy = parsed.some(
+            f => (f?.urlThumb || '').includes('images.unsplash.com') || (f?.urlOriginal || '').includes('images.unsplash.com')
+          );
+          const normalized = parsed.map(normalizeFoto);
+          if (hasLegacy) {
+            localStorage.setItem(getLocalPhotosKey(criancaId), JSON.stringify(normalized));
+          }
+          return normalized;
         }
       } catch (_) {}
     }
